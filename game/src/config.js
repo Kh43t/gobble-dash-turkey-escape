@@ -15,7 +15,7 @@ export const TUNING = {
   startGap: 210,
   gapCatchAt: 0,
   gapMax: 320,
-  farmerCloseRate: 0.55,
+  farmerCloseRate: 0.14,
   farmerFallBackRate: 1.15,
   hideBonusGap: 55,
   cornScore: 25,

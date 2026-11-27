@@ -23,7 +23,7 @@ export class Farmer {
   closeIn(now, deltaMs, turkeyHiding, turkeyStunned) {
     const dt = deltaMs / 16.667;
     let rate = TUNING.farmerCloseRate;
-    if (turkeyHiding) rate = -TUNING.farmerFallBackRate * 1.6;
+    if (turkeyHiding) rate = -TUNING.farmerFallBackRate * 0.8;
     if (turkeyStunned) rate *= 2.2;
     this.x += rate * dt;
     this.runCycle += dt * 0.3;
@@ -31,8 +31,9 @@ export class Farmer {
   }
 
   fallBack(now, deltaMs, amount) {
-    const dt = deltaMs / 16.667;
-    this.x -= amount * dt * 0.06;
+    // A bonus is paid at once, in full: corn, a clean pass and a good hide
+    // each buy real distance from Bram.
+    this.x -= amount;
   }
 
   trip(now) {
