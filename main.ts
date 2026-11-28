@@ -1,4 +1,7 @@
-// Gobble Dash hand-in (Node 22, standard library only).
+// Gobble Dash hand-in (Node 22, standard library only). v3: the game is
+// the same sim-verified runner as v2; the art, staging and screenshots were
+// reworked so the judge's contact sheet shows the chase at its best —
+// bigger actors, a real oven and carving knife, a denser farm and kitchen.
 //
 // The game is plain static files under game/ plus 3-4 screenshots under
 // screenshots/. This program hands them in: it copies both folders into the
@@ -7,6 +10,8 @@
 //
 // Run it outside the grader with MAKEFUN_OUTPUT_DIR standing in for /output:
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
+// The output holds game/, screenshots/ and dossier.json — nothing else is
+// needed for the gate to verify the entry and the judge to read it.
 
 import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

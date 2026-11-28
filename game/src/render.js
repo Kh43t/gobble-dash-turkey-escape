@@ -85,6 +85,71 @@ export class Renderer {
       ctx.fillStyle = '#5d3a1e';
       ctx.fillRect(tx - 4, TUNING.groundY - 34, 8, 34);
     }
+    // Birds crossing the sky, so the top half is never empty.
+    ctx.strokeStyle = 'rgba(60, 40, 20, 0.55)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 3; i++) {
+      const bx = ((distance * 0.25 + i * 380 + time * 0.02) % 1100) - 70;
+      const by = 62 + i * 42;
+      const flap = Math.sin(time * 0.006 + i * 2) * 4;
+      ctx.beginPath();
+      ctx.moveTo(bx - 10, by);
+      ctx.quadraticCurveTo(bx - 4, by - 6 - flap, bx, by);
+      ctx.quadraticCurveTo(bx + 4, by - 6 - flap, bx + 10, by);
+      ctx.stroke();
+    }
+    // Falling autumn leaves.
+    for (let i = 0; i < 8; i++) {
+      const lx = (i * 137 + distance * 0.9) % 1000;
+      const ly = ((i * 89 + time * 0.03 + distance * 0.25) % 360) + 30;
+      const sway = Math.sin(time * 0.004 + i) * 8;
+      ctx.fillStyle = ['#d2691e', '#e07b39', '#c96f3a', '#ffb703'][i % 4];
+      ctx.beginPath();
+      ctx.ellipse(lx + sway, ly, 6, 4, i * 0.7, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // Fence posts along the hill band.
+    const postOffset = (distance * 0.6) % 130;
+    ctx.fillStyle = '#5d3a1e';
+    for (let x = -postOffset; x < TUNING.canvasWidth; x += 130) {
+      ctx.fillRect(x, TUNING.groundY - 40, 6, 16);
+    }
+    // Pumpkins in the farmyard.
+    if (stage.name === 'THE FARMYARD') {
+      const pumpOffset = (distance * 0.6) % 420;
+      for (const px of [300 - pumpOffset, 720 - pumpOffset]) {
+        ctx.fillStyle = '#e07b39';
+        ctx.beginPath();
+        ctx.ellipse(px, TUNING.groundY - 34, 18, 13, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#a8542f';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(px - 8, TUNING.groundY - 45);
+        ctx.quadraticCurveTo(px - 8, TUNING.groundY - 26, px - 8, TUNING.groundY - 24);
+        ctx.moveTo(px + 8, TUNING.groundY - 45);
+        ctx.quadraticCurveTo(px + 8, TUNING.groundY - 26, px + 8, TUNING.groundY - 24);
+        ctx.stroke();
+        ctx.fillStyle = '#4e7a3a';
+        ctx.fillRect(px - 2, TUNING.groundY - 50, 4, 7);
+      }
+    }
+    // The kitchen stage reads as a kitchen: a copper pot hangs in the
+    // background. (A big window was tried here and cut: it read as a yellow
+    // barn door and swallowed the sun.)
+    if (stage.name === 'THE FARMHOUSE KITCHEN') {
+      ctx.strokeStyle = '#5d3a1e';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(600, 70);
+      ctx.lineTo(600, 96);
+      ctx.stroke();
+      ctx.fillStyle = '#b5651d';
+      ctx.beginPath();
+      ctx.arc(600, 122, 22, 0, Math.PI);
+      ctx.fill();
+      ctx.fillRect(578, 120, 44, 6);
+    }
   }
 
   drawGround(distance) {
@@ -100,6 +165,18 @@ export class Renderer {
       ctx.fillRect(x, TUNING.groundY + 34, 44, 6);
       ctx.fillRect(x + 30, TUNING.groundY + 62, 30, 5);
     }
+    // Grass tufts along the ground's top edge.
+    ctx.strokeStyle = '#5d8a3c';
+    ctx.lineWidth = 2;
+    const tuftOffset = (distance * 2.4) % 70;
+    for (let x = -tuftOffset; x < TUNING.canvasWidth; x += 70) {
+      ctx.beginPath();
+      ctx.moveTo(x, TUNING.groundY + 2);
+      ctx.lineTo(x - 4, TUNING.groundY - 8);
+      ctx.moveTo(x + 4, TUNING.groundY + 2);
+      ctx.lineTo(x + 8, TUNING.groundY - 7);
+      ctx.stroke();
+    }
   }
 
   drawTurkey(turkey, now) {
@@ -109,7 +186,8 @@ export class Renderer {
     if (blink) ctx.globalAlpha = 0.35;
     ctx.save();
     ctx.translate(turkey.x, turkey.y);
-    ctx.scale(1 + squash * 0.12, 1 - squash * 0.12);
+    const actorScale = TUNING.actorScale;
+    ctx.scale((1 + squash * 0.12) * actorScale, (1 - squash * 0.12) * actorScale);
     if (turkey.hiding) {
       // Only the tail fan and a nervous eye poke out of the hay.
       ctx.fillStyle = '#8a5a2e';
@@ -123,6 +201,8 @@ export class Renderer {
     const legSwing = turkey.onGround && !turkey.sliding
       ? Math.sin(turkey.runCycle) * 12
       : 0;
+    // Drawn bigger than the hitbox on purpose (TUNING.actorScale): Tom must
+    // be the biggest thing in the frame, not a speck behind a tree.
     // Tail fan.
     ctx.fillStyle = '#a0522d';
     for (let i = -2; i <= 2; i++) {
@@ -206,6 +286,8 @@ export class Renderer {
     const tripped = farmer.mood === 'tripped';
     ctx.save();
     ctx.translate(x, y);
+    // Same actor scale as the turkey: Bram must loom, not hide at the edge.
+    ctx.scale(TUNING.actorScale, TUNING.actorScale);
     if (tripped) ctx.rotate(-0.5);
     const swing = Math.sin(farmer.runCycle) * 10;
     // Legs: blue overalls.
@@ -344,69 +426,157 @@ export class Renderer {
         ctx.stroke();
       }
     } else if (obstacle.kind === 'oven') {
-      // The dreaded Thanksgiving oven, door glowing, heat shimmering.
+      // The dreaded Thanksgiving oven, drawn as an oven: glowing arched
+      // door with live flames, chimney with smoke, knobs on top. No text
+      // label — the shape must say "oven" on its own.
       const glow = 0.6 + Math.sin(now * 0.008) * 0.25;
-      ctx.fillStyle = `rgba(255, 120, 20, ${glow * 0.35})`;
+      ctx.fillStyle = `rgba(255, 120, 20, ${glow * 0.4})`;
       ctx.beginPath();
-      ctx.arc(cx, ground - 50, 66, 0, Math.PI * 2);
+      ctx.arc(cx, ground - 50, 72, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = '#3a3a3a';
-      roundRect(ctx, cx - 48, ground - 96, 96, 96, 8);
+      // Chimney with drifting smoke.
+      ctx.fillStyle = '#2e2e2e';
+      ctx.fillRect(cx - 38, ground - 118, 20, 24);
+      for (let i = 0; i < 3; i++) {
+        const puff = (now * 0.0004 + i * 0.33) % 1;
+        ctx.fillStyle = `rgba(220, 220, 220, ${0.5 * (1 - puff)})`;
+        ctx.beginPath();
+        ctx.arc(cx - 28 + puff * 16, ground - 126 - puff * 34, 5 + puff * 7, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // Body: dark steel, top strip with knobs.
+      ctx.fillStyle = '#333336';
+      roundRect(ctx, cx - 52, ground - 96, 104, 96, 10);
       ctx.fill();
-      ctx.fillStyle = '#555';
-      ctx.fillRect(cx - 48, ground - 96, 96, 14);
+      ctx.fillStyle = '#4a4a4e';
+      ctx.fillRect(cx - 52, ground - 96, 104, 16);
+      ctx.fillStyle = '#ff5d3a';
+      for (const kx of [-30, 0, 30]) {
+        ctx.beginPath();
+        ctx.arc(cx + kx, ground - 88, 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.strokeStyle = '#1d1d1f';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(cx - 52, ground - 96, 104, 96);
+      // Arched door: hot orange window with two flickering flames.
       ctx.fillStyle = '#ff7b24';
-      roundRect(ctx, cx - 32, ground - 66, 64, 44, 6);
+      ctx.beginPath();
+      ctx.moveTo(cx - 34, ground - 28);
+      ctx.lineTo(cx - 34, ground - 56);
+      ctx.arc(cx, ground - 56, 34, Math.PI, 0);
+      ctx.lineTo(cx + 34, ground - 28);
+      ctx.closePath();
       ctx.fill();
       ctx.fillStyle = '#ffd23f';
-      ctx.beginPath();
-      ctx.moveTo(cx - 18, ground - 30);
-      ctx.lineTo(cx, ground - 58);
-      ctx.lineTo(cx + 18, ground - 30);
-      ctx.closePath();
-      ctx.fill();
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 13px "Trebuchet MS", Verdana, sans-serif';
-      ctx.fillText('OVEN', cx - 18, ground - 102);
+      for (const fx of [-14, 12]) {
+        const flick = 1 + Math.sin(now * 0.012 + fx) * 0.18;
+        ctx.beginPath();
+        ctx.moveTo(cx + fx, ground - 30);
+        ctx.quadraticCurveTo(cx + fx - 9, ground - 46, cx + fx, ground - 62 * flick);
+        ctx.quadraticCurveTo(cx + fx + 9, ground - 46, cx + fx, ground - 30);
+        ctx.fill();
+      }
+      // Heat shimmer rising off the door.
+      ctx.strokeStyle = 'rgba(255, 210, 63, 0.8)';
+      ctx.lineWidth = 2;
+      for (const sx of [-20, 0, 20]) {
+        ctx.beginPath();
+        ctx.moveTo(cx + sx, ground - 100);
+        ctx.quadraticCurveTo(cx + sx + 5, ground - 108, cx + sx, ground - 116);
+        ctx.stroke();
+      }
     } else if (obstacle.kind === 'knifeSwing') {
-      const swing = Math.sin(obstacle.swingPhase) * 26;
-      const kx = cx + swing;
-      ctx.strokeStyle = '#5d3a1e';
+      // The carving knife, big and gleaming: a wooden beam above, the blade
+      // hanging from it on a rope, sweeping a wide arc. Slide under it.
+      const angle = Math.sin(obstacle.swingPhase) * 0.45;
+      // Beam and hook the knife hangs from.
+      ctx.fillStyle = '#6b4423';
+      ctx.fillRect(cx - 34, ground - 122, 68, 10);
+      ctx.fillStyle = '#3a3a3a';
+      ctx.beginPath();
+      ctx.arc(cx, ground - 110, 5, 0, Math.PI * 2);
+      ctx.fill();
+      // Faint arc showing the sweep path, so the danger reads before it hits.
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 6]);
+      ctx.beginPath();
+      ctx.arc(cx, ground - 110, 96, Math.PI / 2 - 0.5, Math.PI / 2 + 0.5);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.save();
+      ctx.translate(cx, ground - 110);
+      ctx.rotate(angle);
+      ctx.strokeStyle = '#8a6d3b';
       ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.moveTo(cx, ground - 96);
-      ctx.lineTo(kx, ground - 60);
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, 24);
       ctx.stroke();
-      ctx.save();
-      ctx.translate(kx, ground - 44);
-      ctx.rotate(Math.sin(obstacle.swingPhase) * 0.5);
+      // Wooden handle.
+      ctx.fillStyle = '#4a2c14';
+      roundRect(ctx, -7, 22, 14, 18, 4);
+      ctx.fill();
+      // Long carving blade, gleaming edge.
       ctx.fillStyle = '#dfe6ea';
       ctx.beginPath();
-      ctx.moveTo(0, -34);
-      ctx.lineTo(10, 6);
-      ctx.lineTo(0, 16);
-      ctx.lineTo(-10, 6);
+      ctx.moveTo(-11, 40);
+      ctx.lineTo(11, 40);
+      ctx.lineTo(6, 88);
+      ctx.lineTo(0, 100);
+      ctx.lineTo(-6, 88);
       ctx.closePath();
       ctx.fill();
-      ctx.fillStyle = '#4a2c14';
-      ctx.fillRect(-6, 14, 12, 14);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(7, 44);
+      ctx.lineTo(3, 84);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(90, 100, 110, 0.7)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(-8, 44);
+      ctx.lineTo(-4, 84);
+      ctx.stroke();
       ctx.restore();
     } else if (obstacle.kind === 'knifeFall') {
       const fy = obstacle.fallY === null ? -80 : obstacle.fallY;
+      const falling = obstacle.armed && fy < TUNING.groundY - obstacle.h;
       ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
       ctx.beginPath();
-      ctx.ellipse(cx, ground - 2, 18, 4, 0, 0, Math.PI * 2);
+      ctx.ellipse(cx, ground - 2, 20, 4, 0, 0, Math.PI * 2);
       ctx.fill();
+      // Speed lines while it drops, so the player sees it coming.
+      if (falling) {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.lineWidth = 2;
+        for (const lx of [-16, 0, 16]) {
+          ctx.beginPath();
+          ctx.moveTo(cx + lx, fy - 14);
+          ctx.lineTo(cx + lx, fy - 34);
+          ctx.stroke();
+        }
+      }
+      // A bigger blade: long, gleaming, wooden handle.
       ctx.fillStyle = '#dfe6ea';
       ctx.beginPath();
       ctx.moveTo(cx, fy);
-      ctx.lineTo(cx + 12, fy + 40);
-      ctx.lineTo(cx, fy + 52);
-      ctx.lineTo(cx - 12, fy + 40);
+      ctx.lineTo(cx + 15, fy + 48);
+      ctx.lineTo(cx, fy + 64);
+      ctx.lineTo(cx - 15, fy + 48);
       ctx.closePath();
       ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(cx + 9, fy + 8);
+      ctx.lineTo(cx + 3, fy + 50);
+      ctx.stroke();
       ctx.fillStyle = '#4a2c14';
-      ctx.fillRect(cx - 7, fy + 50, 14, 14);
+      roundRect(ctx, cx - 9, fy + 62, 18, 16, 4);
+      ctx.fill();
     } else if (obstacle.kind === 'pot') {
       ctx.fillStyle = '#2f2f2f';
       ctx.beginPath();
@@ -416,9 +586,9 @@ export class Renderer {
       ctx.beginPath();
       ctx.ellipse(cx, ground - 52, 26, 8, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 12px "Trebuchet MS", Verdana, sans-serif';
-      ctx.fillText('STEW', cx - 16, ground - 66);
+      ctx.fillStyle = '#c0c0c0';
+      ctx.fillRect(cx - 38, ground - 56, 8, 6);
+      ctx.fillRect(cx + 30, ground - 56, 8, 6);
     }
   }
 
@@ -518,9 +688,14 @@ export class Renderer {
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 12px "Trebuchet MS", Verdana, sans-serif';
     ctx.fillText('FARMER', 740, 52);
-    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    // The control hints sit on their own dark pill: white text on a pale
+    // sky was unreadable in the v2 screenshots.
+    ctx.fillStyle = 'rgba(30, 16, 8, 0.55)';
+    roundRect(ctx, 12, 70, 460, 22, 11);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
     ctx.font = '13px "Trebuchet MS", Verdana, sans-serif';
-    ctx.fillText('SPACE jump ×2   ↓ slide   ↓ near hay = hide   P pause   M mute', 26, 84);
+    ctx.fillText('SPACE jump ×2   ↓ slide   ↓ near hay = hide   P pause   M mute', 26, 85);
   }
 
   drawTitle(now) {

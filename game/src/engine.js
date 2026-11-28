@@ -34,6 +34,9 @@ export class Engine {
     this.lastTime = 0;
     this.raf = 0;
     this.paused = false;
+    this.frozen = false;
+    // frozen is staging-only: a screenshot moment holds its pose while the
+    // page keeps rendering (see main.js stageShot). Real play never sets it.
     this.outcome = null;
     this.statusEl = document.getElementById('sr-status');
     try {
@@ -82,6 +85,9 @@ export class Engine {
   }
 
   tick(now, deltaMs) {
+    // A frozen staged frame does not advance: the screenshot catches the
+    // exact moment the maker staged, not a collision a second later.
+    if (this.frozen) return;
     if (this.controls.consumeMute()) {
       this.sounds.ensure();
       const muted = this.sounds.toggleMute();

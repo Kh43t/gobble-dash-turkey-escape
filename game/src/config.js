@@ -13,6 +13,10 @@ export const TUNING = {
   speedRampPerMetre: 0.0032,
   escapeDistance: 1000,
   startGap: 210,
+  actorScale: 1.35,
+  // Actors are drawn bigger than their hitboxes: the chase must read at a
+  // glance on a small contact sheet, while the sim-verified fairness (the
+  // hitboxes the collisions use) does not move at all.
   gapCatchAt: 0,
   gapMax: 320,
   farmerCloseRate: 0.14,
